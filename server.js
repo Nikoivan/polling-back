@@ -2,10 +2,13 @@ const http = require("http");
 const path = require("path");
 const fs = require("fs");
 const Koa = require("koa");
-const koaBody = require("koa-body");
+const { koaBody } = require("koa-body");
 const koaStatic = require("koa-static");
 const uuid = require("uuid");
 const app = new Koa();
+const Fake = require("./components/Fake");
+
+const fake = new Fake();
 
 const public = path.join(__dirname, "/public");
 app.use(koaStatic(public));
@@ -54,18 +57,22 @@ app.use(
 const Router = require("koa-router");
 const router = new Router();
 
-router.get("/api/check-email", async (ctx, next) => {
-  const { email } = ctx.request.query;
-
-  if (Math.random() > 0.5) {
-    ctx.response.status = 500;
+router.get("/messages/unread", async (ctx, next) => {
+  ctx.response.set("Access-Control-Allow-Origin", "*");
+  if (ctx.request.method !== "GET") {
+    next();
 
     return;
   }
+  try {
+    const unreadMessages = fake.getUnreadMessages();
 
-  ctx.response.body = {
-    available: email.includes("@") && !email.startsWith("admin"),
-  };
+    ctx.response.body = JSON.stringify(unreadMessages);
+    ctx.response.status = 200;
+  } catch (err) {
+    console.log(err);
+  }
+  next();
 });
 
 app.use(router.routes()).use(router.allowedMethods());
