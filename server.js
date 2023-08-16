@@ -43,6 +43,8 @@ app.use(async (ctx, next) => {
 
     ctx.response.status = 204;
   }
+  console.log("headers");
+  next();
 });
 
 app.use(
@@ -58,10 +60,18 @@ const Router = require("koa-router");
 const router = new Router();
 
 router.get("/messages/unread", async (ctx, next) => {
-  ctx.response.set("Access-Control-Allow-Origin", "*");
   if (ctx.request.method !== "GET") {
     next();
 
+    return;
+  }
+  if (Math.random() > 0.5) {
+    ctx.response.body = JSON.stringify({
+      error: "Error on server",
+    });
+    ctx.response.status = 500;
+    console.log(ctx.response.body);
+    next();
     return;
   }
   try {
@@ -70,9 +80,13 @@ router.get("/messages/unread", async (ctx, next) => {
     ctx.response.body = JSON.stringify(unreadMessages);
     ctx.response.status = 200;
   } catch (err) {
-    console.log(err);
+    ctx.response.body = JSON.stringify({
+      error: "Error on server",
+    });
+    ctx.response.status = 500;
   }
   next();
+  console.log("unread");
 });
 
 app.use(router.routes()).use(router.allowedMethods());
